@@ -15,6 +15,9 @@ artifacts/
 appsettings.*.Local.json
 secrets.json
 
+# Clés DataProtection (chiffrement des tokens Kajabi) — régénérées localement, jamais commitées
+keys/
+
 # --- Node / Angular ---
 node_modules/
 frontend/dist/

@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using SiteGuardian.Api.Data;
 using SiteGuardian.Api.Hubs;
 using SiteGuardian.Api.Models;
 using SiteGuardian.Api.Services.Audit;
+using SiteGuardian.Api.Services.Kajabi;
 using SiteGuardian.Api.Services.Llm;
 
 // --- Point d'entrée CLI (audit sans serveur web, cf. §11 du plan) -----------
@@ -62,6 +64,17 @@ builder.Services.AddSingleton(sp =>
     };
 });
 builder.Services.AddScoped<ContentAnalyzer>();
+
+// --- Kajabi MCP (§6/§7 du plan) : OAuth 2.1, tokens chiffrés, lecture seule en Phase 2. ---
+builder.Services.AddDataProtection()
+    .SetApplicationName("SiteGuardian")
+    .PersistKeysToFileSystem(new DirectoryInfo(
+        Path.Combine(builder.Environment.ContentRootPath, "keys")));
+builder.Services.AddHttpClient<KajabiOAuthMetadataDiscovery>();
+builder.Services.AddHttpClient<KajabiDynamicClientRegistrar>();
+builder.Services.AddHttpClient<KajabiOAuthService>();
+builder.Services.AddScoped<KajabiTokenStore>();
+builder.Services.AddScoped<KajabiMcpClient>();
 
 // CORS restreint au front local + GitHub Pages (démo lecture seule), cf. §12.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
@@ -184,6 +197,83 @@ app.MapPost("/api/audit/import", async (HttpRequest request, SiteGuardianDbConte
 })
 .WithName("ImportSwarmReport");
 
+// Démarre l'OAuth Kajabi (§7) : redirige le gestionnaire du site vers l'écran d'autorisation.
+app.MapGet("/api/kajabi/connect", async (HttpRequest request, KajabiOAuthService oauth) =>
+{
+    var redirectUri = KajabiRedirect.CallbackUri(request);
+    try
+    {
+        var authUrl = await oauth.BuildAuthorizationUrlAsync(redirectUri);
+        // AbsoluteUri (pas ToString) : préserve l'encodage %-escape, ex. l'espace de "scope".
+        return Results.Redirect(authUrl.AbsoluteUri);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Impossible de démarrer la connexion Kajabi : {ex.Message}", statusCode: 502);
+    }
+})
+.WithName("ConnectKajabi");
+
+// Retour de Kajabi après autorisation : échange le code contre des tokens.
+app.MapGet("/api/kajabi/callback", async (
+    HttpRequest request, KajabiOAuthService oauth, KajabiMcpClient mcp, KajabiTokenStore tokenStore) =>
+{
+    var error = request.Query["error"].ToString();
+    if (!string.IsNullOrEmpty(error))
+        return Results.BadRequest(new { error, description = request.Query["error_description"].ToString() });
+
+    var code = request.Query["code"].ToString();
+    var state = request.Query["state"].ToString();
+    if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state))
+        return Results.BadRequest(new { error = "Paramètres code/state manquants." });
+
+    try
+    {
+        await oauth.HandleCallbackAsync(code, state, KajabiRedirect.CallbackUri(request));
+
+        // Premier appel de toute session MCP (§6) : localise le site connecté.
+        string? siteId = null;
+        try
+        {
+            var sites = await mcp.ListSitesAsync();
+            siteId = sites.FirstOrDefault()?.Id;
+            if (siteId is not null)
+                await tokenStore.UpdateSiteIdAsync(siteId);
+        }
+        catch (Exception)
+        {
+            // La connexion est valide même si list_sites échoue ; le site_id sera retenté plus tard.
+        }
+
+        return Results.Ok(new { connected = true, siteId });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Échec de la connexion Kajabi : {ex.Message}", statusCode: 502);
+    }
+})
+.WithName("KajabiCallback");
+
+// Statut de connexion (§7) : connecté ? site_id ? reconnexion requise ?
+app.MapGet("/api/kajabi/status", async (KajabiTokenStore tokenStore) =>
+{
+    var connection = await tokenStore.GetConnectionAsync();
+    if (connection is null)
+        return Results.Ok(new { connected = false, needsReconnect = false });
+
+    var now = DateTimeOffset.UtcNow;
+    return Results.Ok(new
+    {
+        connected = true,
+        siteId = connection.SiteId,
+        scopes = connection.Scopes,
+        connectedAt = connection.ConnectedAt,
+        expiresAt = connection.AccessTokenExpiresAt,
+        needsReconnect = connection.NeedsReconnect(now),
+    });
+})
+.WithName("KajabiStatus");
+
 app.MapHub<ProgressHub>("/hubs/progress");
 
 app.Run();
@@ -191,3 +281,10 @@ return 0;
 
 /// <summary>Corps de POST /api/audit.</summary>
 public record AuditRequest(string Url);
+
+/// <summary>Construit l'URI de callback OAuth Kajabi — doit être identique entre /connect et /callback.</summary>
+public static class KajabiRedirect
+{
+    public static Uri CallbackUri(HttpRequest request) =>
+        new($"{request.Scheme}://{request.Host}/api/kajabi/callback");
+}

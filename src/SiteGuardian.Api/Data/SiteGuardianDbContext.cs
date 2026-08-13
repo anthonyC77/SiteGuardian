@@ -18,6 +18,10 @@ public class SiteGuardianDbContext : DbContext
 
     public DbSet<PageTextHash> PageTextHashes => Set<PageTextHash>();
 
+    public DbSet<KajabiConnection> KajabiConnections => Set<KajabiConnection>();
+
+    public DbSet<KajabiOAuthState> KajabiOAuthStates => Set<KajabiOAuthState>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AuditJob>()
@@ -25,5 +29,7 @@ public class SiteGuardianDbContext : DbContext
             .WithOne(f => f.AuditJob)
             .HasForeignKey(f => f.AuditJobId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<KajabiOAuthState>().HasKey(s => s.State);
     }
 }
