@@ -5,11 +5,12 @@ using ModelContextProtocol.Protocol;
 namespace SiteGuardian.Api.Services.Kajabi;
 
 /// <summary>
-/// Client MCP vers le serveur Kajabi (§6 du plan) : lecture seule pour la Phase 2
-/// (list_sites, get_theme_content). L'écriture (update_theme_content, etc.) arrive
-/// en Phase 3, derrière la validation humaine du plan de correction.
+/// Client MCP vers le serveur Kajabi (§6/§4.2 du plan). Chaque appel ouvre une
+/// session courte (list_sites/get_theme_content en Phase 2 ; générique en Phase 3
+/// pour l'Agent Correction) — plus simple à raisonner qu'une session partagée sur
+/// toute la durée d'une boucle agentique, au prix d'une reconnexion par appel.
 /// </summary>
-public class KajabiMcpClient
+public class KajabiMcpClient : IKajabiMcpClient
 {
     private readonly KajabiOAuthService _oauth;
     private readonly IConfiguration _config;
@@ -39,13 +40,28 @@ public class KajabiMcpClient
         return await McpClient.CreateAsync(transport, loggerFactory: _loggerFactory, cancellationToken: ct);
     }
 
-    public async Task<IReadOnlyList<KajabiSite>> ListSitesAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<KajabiMcpTool>> ListToolsAsync(CancellationToken ct = default)
     {
         await using var client = await ConnectAsync(ct);
-        var result = await client.CallToolAsync("list_sites", new Dictionary<string, object?>(), cancellationToken: ct);
-        var json = ExtractText(result);
+        var tools = await client.ListToolsAsync(cancellationToken: ct);
+        return tools.Select(t => new KajabiMcpTool(t.Name, t.Description, t.JsonSchema)).ToList();
+    }
 
-        using var doc = JsonDocument.Parse(json);
+    public async Task<KajabiMcpToolResult> CallToolAsync(
+        string toolName, IReadOnlyDictionary<string, object?> args, CancellationToken ct = default)
+    {
+        await using var client = await ConnectAsync(ct);
+        var result = await client.CallToolAsync(toolName, args, cancellationToken: ct);
+        return new KajabiMcpToolResult(ExtractRawText(result), result.IsError == true);
+    }
+
+    public async Task<IReadOnlyList<KajabiSite>> ListSitesAsync(CancellationToken ct = default)
+    {
+        var result = await CallToolAsync("list_sites", new Dictionary<string, object?>(), ct);
+        if (result.IsError)
+            throw new InvalidOperationException($"Le serveur MCP Kajabi a renvoyé une erreur : {result.Text}");
+
+        using var doc = JsonDocument.Parse(result.Text);
         var root = doc.RootElement.ValueKind == JsonValueKind.Array
             ? doc.RootElement
             : doc.RootElement.TryGetProperty("sites", out var sites) ? sites : doc.RootElement;
@@ -67,20 +83,13 @@ public class KajabiMcpClient
     /// <summary>Récupère le contenu d'un bloc de thème (bandeau, footer…) — lecture seule.</summary>
     public async Task<string> GetThemeContentAsync(string siteId, string contentKey, CancellationToken ct = default)
     {
-        await using var client = await ConnectAsync(ct);
-        var result = await client.CallToolAsync(
+        var result = await CallToolAsync(
             "get_theme_content",
             new Dictionary<string, object?> { ["site_id"] = siteId, ["key"] = contentKey },
-            cancellationToken: ct);
-        return ExtractText(result);
-    }
-
-    private static string ExtractText(CallToolResult result)
-    {
-        if (result.IsError == true)
-            throw new InvalidOperationException(
-                $"Le serveur MCP Kajabi a renvoyé une erreur : {ExtractRawText(result)}");
-        return ExtractRawText(result);
+            ct);
+        if (result.IsError)
+            throw new InvalidOperationException($"Le serveur MCP Kajabi a renvoyé une erreur : {result.Text}");
+        return result.Text;
     }
 
     private static string ExtractRawText(CallToolResult result) =>

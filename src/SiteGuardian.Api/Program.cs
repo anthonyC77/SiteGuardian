@@ -4,6 +4,7 @@ using SiteGuardian.Api.Data;
 using SiteGuardian.Api.Hubs;
 using SiteGuardian.Api.Models;
 using SiteGuardian.Api.Services.Audit;
+using SiteGuardian.Api.Services.Correction;
 using SiteGuardian.Api.Services.Kajabi;
 using SiteGuardian.Api.Services.Llm;
 
@@ -75,6 +76,26 @@ builder.Services.AddHttpClient<KajabiDynamicClientRegistrar>();
 builder.Services.AddHttpClient<KajabiOAuthService>();
 builder.Services.AddScoped<KajabiTokenStore>();
 builder.Services.AddScoped<KajabiMcpClient>();
+builder.Services.AddScoped<IKajabiMcpClient>(sp => sp.GetRequiredService<KajabiMcpClient>());
+
+// --- Agent Correction (§4.2/§5 du plan) : boucle agentique en lecture seule,
+// plan proposé validé par un humain, exécution directe (sans LLM) sur validation. ---
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new CorrectionAgentOptions
+    {
+        Model = config["Agents:Correction:Model"] ?? "claude-haiku-4-5-20251001",
+        FallbackModel = config["Agents:Correction:FallbackModel"] ?? "claude-sonnet-5",
+        MaxToolCalls = config.GetValue("Agents:Correction:MaxToolCalls",
+            config.GetValue("Budget:MaxToolCallsParCorrection", 15)),
+        MaxTokens = config.GetValue("Budget:MaxTokensParCorrection", 50_000),
+        InputPricePerMTokEur = config.GetValue("Budget:PrixEntreeEURParMTokens", 2.8m),
+        OutputPricePerMTokEur = config.GetValue("Budget:PrixSortieEURParMTokens", 14m),
+    };
+});
+builder.Services.AddScoped<CorrectionAgent>();
+builder.Services.AddScoped<CorrectionApplier>();
 
 // CORS restreint au front local + GitHub Pages (démo lecture seule), cf. §12.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
@@ -274,6 +295,71 @@ app.MapGet("/api/kajabi/status", async (KajabiTokenStore tokenStore) =>
 })
 .WithName("KajabiStatus");
 
+// Propose un plan de correction à partir d'une instruction en langage naturel (§4.2/§7).
+// Toujours une préview : aucune écriture n'a lieu ici.
+app.MapPost("/api/corrections", async (
+    CorrectionRequest request, CorrectionAgent agent, SiteGuardianDbContext db, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Instruction))
+        return Results.BadRequest(new { error = "Instruction requise." });
+
+    var plan = await agent.BuildPlanAsync(request.Instruction, ct);
+    db.CorrectionPlans.Add(plan);
+    await db.SaveChangesAsync(ct);
+
+    return Results.Created($"/api/corrections/{plan.Id}", plan);
+})
+.WithName("ProposeCorrection");
+
+// Historique des corrections (§7, écran Historique).
+// Tri en mémoire : le provider Sqlite d'EF Core ne traduit pas ORDER BY sur
+// DateTimeOffset en SQL (même limitation que KajabiOAuthService, cf. Phase 2).
+app.MapGet("/api/corrections", async (SiteGuardianDbContext db) =>
+{
+    var plans = await db.CorrectionPlans.Include(p => p.Actions).ToListAsync();
+    return Results.Ok(plans.OrderByDescending(p => p.CreatedAt));
+})
+.WithName("ListCorrections");
+
+app.MapGet("/api/corrections/{id:guid}", async (Guid id, SiteGuardianDbContext db) =>
+{
+    var plan = await db.CorrectionPlans.Include(p => p.Actions).FirstOrDefaultAsync(p => p.Id == id);
+    return plan is null ? Results.NotFound() : Results.Ok(plan);
+})
+.WithName("GetCorrection");
+
+// Exécute le plan validé (§4.2 étape 5) : écriture directe backend, args exacts du plan.
+app.MapPost("/api/corrections/{id:guid}/apply", async (
+    Guid id, SiteGuardianDbContext db, CorrectionApplier applier, CancellationToken ct) =>
+{
+    var plan = await db.CorrectionPlans.Include(p => p.Actions).FirstOrDefaultAsync(p => p.Id == id, ct);
+    if (plan is null) return Results.NotFound();
+    if (plan.Status != CorrectionPlanStatus.AwaitingReview)
+        return Results.Conflict(new { error = $"Plan non applicable (statut : {plan.Status})." });
+
+    await applier.ApplyAsync(plan, ct);
+    await db.SaveChangesAsync(ct);
+
+    return Results.Ok(plan);
+})
+.WithName("ApplyCorrection");
+
+// Journalise le refus d'un plan (§7) — aucune écriture.
+app.MapPost("/api/corrections/{id:guid}/reject", async (Guid id, SiteGuardianDbContext db) =>
+{
+    var plan = await db.CorrectionPlans.FirstOrDefaultAsync(p => p.Id == id);
+    if (plan is null) return Results.NotFound();
+    if (plan.Status is not (CorrectionPlanStatus.AwaitingReview or CorrectionPlanStatus.NeedsClarification))
+        return Results.Conflict(new { error = $"Plan non refusable (statut : {plan.Status})." });
+
+    plan.Status = CorrectionPlanStatus.Rejected;
+    plan.DecidedAt = DateTimeOffset.UtcNow;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(plan);
+})
+.WithName("RejectCorrection");
+
 app.MapHub<ProgressHub>("/hubs/progress");
 
 app.Run();
@@ -281,6 +367,9 @@ return 0;
 
 /// <summary>Corps de POST /api/audit.</summary>
 public record AuditRequest(string Url);
+
+/// <summary>Corps de POST /api/corrections.</summary>
+public record CorrectionRequest(string Instruction);
 
 /// <summary>Construit l'URI de callback OAuth Kajabi — doit être identique entre /connect et /callback.</summary>
 public static class KajabiRedirect

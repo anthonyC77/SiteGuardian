@@ -14,7 +14,9 @@ public class SiteGuardianDbContext : DbContext
 
     public DbSet<Finding> Findings => Set<Finding>();
 
-    public DbSet<CorrectionRecord> Corrections => Set<CorrectionRecord>();
+    public DbSet<CorrectionPlan> CorrectionPlans => Set<CorrectionPlan>();
+
+    public DbSet<CorrectionAction> CorrectionActions => Set<CorrectionAction>();
 
     public DbSet<PageTextHash> PageTextHashes => Set<PageTextHash>();
 
@@ -31,5 +33,11 @@ public class SiteGuardianDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<KajabiOAuthState>().HasKey(s => s.State);
+
+        modelBuilder.Entity<CorrectionPlan>()
+            .HasMany(p => p.Actions)
+            .WithOne(a => a.CorrectionPlan)
+            .HasForeignKey(a => a.CorrectionPlanId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

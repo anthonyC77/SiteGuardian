@@ -24,4 +24,7 @@ public class FakeLlmProvider : ILlmProvider
             : new LlmResponse("[]", new LlmUsage(0, 0));
         return Task.FromResult(response);
     }
+
+    public Task<LlmToolUseResponse> CompleteWithToolsAsync(LlmToolUseRequest request, CancellationToken ct = default) =>
+        throw new NotSupportedException("FakeLlmProvider (Phase 1) ne gère pas le tool-use — voir FakeToolUseLlmProvider.");
 }

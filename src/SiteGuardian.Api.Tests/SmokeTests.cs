@@ -50,9 +50,37 @@ public class SmokeTests
     }
 
     [Fact]
-    public void CorrectionRecord_DefaultStatus_IsProposed()
+    public void CorrectionPlan_DefaultStatus_IsAwaitingReview()
     {
-        var record = new CorrectionRecord { Instruction = "corrige accompagnement partout" };
-        Assert.Equal(CorrectionStatus.Proposed, record.Status);
+        var plan = new CorrectionPlan { Instruction = "corrige accompagnement partout" };
+        Assert.Equal(CorrectionPlanStatus.AwaitingReview, plan.Status);
+    }
+
+    [Fact]
+    public void CorrectionPlan_WithActions_IsPersisted()
+    {
+        using var context = NewInMemoryContext();
+
+        var plan = new CorrectionPlan
+        {
+            Instruction = "corrige acccompagnement partout",
+            Resume = "1 remplacement dans le bandeau, visible sur 43 pages",
+        };
+        plan.Actions.Add(new CorrectionAction
+        {
+            Tool = "update_theme_content",
+            Target = "Announcement Bar — site theme",
+            Before = "…acccompagnement…",
+            After = "…accompagnement…",
+            ArgsJson = "{\"site_id\":\"s1\",\"key\":\"announcement_bar\"}",
+        });
+
+        context.CorrectionPlans.Add(plan);
+        context.SaveChanges();
+
+        var reloaded = context.CorrectionPlans.Include(p => p.Actions).Single();
+        Assert.Single(reloaded.Actions);
+        Assert.Equal("update_theme_content", reloaded.Actions[0].Tool);
+        Assert.False(reloaded.Actions[0].Applied);
     }
 }
