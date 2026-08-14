@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SiteGuardian.Api.Models;
 
 /// <summary>
@@ -11,6 +13,9 @@ public class CorrectionAction
 
     public Guid CorrectionPlanId { get; set; }
 
+    /// <summary>Navigation inverse EF Core — ignorée en JSON : fixup automatique avec
+    /// CorrectionPlan.Actions créerait un cycle à la sérialisation (System.Text.Json).</summary>
+    [JsonIgnore]
     public CorrectionPlan? CorrectionPlan { get; set; }
 
     /// <summary>Nom du tool MCP (ex. « update_theme_content ») — doit être dans la whitelist d'écriture.</summary>

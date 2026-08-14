@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SiteGuardian.Api.Models;
 
 /// <summary>
@@ -11,6 +13,9 @@ public class Finding
 
     public Guid AuditJobId { get; set; }
 
+    /// <summary>Navigation inverse EF Core — ignorée en JSON : fixup automatique avec
+    /// AuditJob.Findings créerait un cycle à la sérialisation (System.Text.Json).</summary>
+    [JsonIgnore]
     public AuditJob? AuditJob { get; set; }
 
     /// <summary>Id stable façon swarm, ex. « seo-meta-description-missing ».</summary>

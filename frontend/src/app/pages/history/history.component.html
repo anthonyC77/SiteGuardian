@@ -1,0 +1,74 @@
+<section class="sg-card">
+  <h2>Historique des corrections</h2>
+
+  @if (loadError()) {
+    <p class="sg-empty">{{ loadError() }}</p>
+  } @else if (plans().length === 0) {
+    <p class="sg-muted">Aucune correction proposée pour l'instant.</p>
+  } @else {
+    <ul class="plan-list">
+      @for (plan of plans(); track plan.id) {
+        <li class="plan">
+          <div class="plan__header">
+            <span class="sg-badge" [ngClass]="statusClass(plan.status)">{{ statusLabel(plan.status) }}</span>
+            <span class="sg-muted">{{ plan.createdAt | date: 'medium' }}</span>
+          </div>
+
+          <p class="plan__instruction">« {{ plan.instruction }} »</p>
+
+          @if (plan.resume) {
+            <p class="sg-muted">{{ plan.resume }}</p>
+          }
+          @if (plan.clarification) {
+            <p class="sg-muted">{{ plan.clarification }}</p>
+          }
+          @if (plan.error) {
+            <p class="sg-empty">{{ plan.error }}</p>
+          }
+
+          <p class="plan__meta">
+            Modèle : {{ plan.modelUsed }}
+            @if (plan.escalatedToFallback) {
+              (escaladé)
+            }
+            · {{ plan.toolCallCount }} appel(s) d'outil · ~{{ plan.estimatedCostEur | number: '1.3-3' }} €
+          </p>
+
+          @if (plan.actions.length > 0) {
+            <ul class="action-list">
+              @for (action of plan.actions; track action.id) {
+                <li class="action" [class.action--blocked]="action.blocked">
+                  <div class="action__header">
+                    <strong>{{ action.target }}</strong>
+                    <span class="sg-muted">({{ action.tool }})</span>
+                    @if (action.blocked) {
+                      <span class="sg-badge sg-badge--danger">Bloqué</span>
+                    } @else if (action.applied) {
+                      <span class="sg-badge sg-badge--success">Appliqué</span>
+                    }
+                  </div>
+
+                  @if (!action.blocked) {
+                    <div class="diff">
+                      <div class="sg-diff-before">{{ action.before || '(vide)' }}</div>
+                      <div class="sg-diff-after">{{ action.after || '(vide)' }}</div>
+                    </div>
+                  }
+
+                  @if (action.applied) {
+                    <div class="action__footer">
+                      <p class="verification" [class.verification--ok]="action.postWriteVerified">
+                        {{ action.postWriteVerified ? '✓ Vérifié après écriture' : '⚠ Non vérifié après écriture' }}
+                      </p>
+                      <button class="sg-btn sg-btn--ghost" (click)="restore(action)">↺ Restaurer avant</button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

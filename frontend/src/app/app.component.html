@@ -1,21 +1,24 @@
-<main class="shell">
-  <header>
-    <h1>{{ title }}</h1>
-    <p class="phase">{{ phase }}</p>
+<div class="shell">
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__logo">🛡️</span>
+      <h1>{{ title }}</h1>
+    </div>
+    <nav class="topbar__nav">
+      <a routerLink="/tableau-de-bord" routerLinkActive="active">Tableau de bord</a>
+      <a routerLink="/corrections" routerLinkActive="active">Corrections</a>
+      <a routerLink="/historique" routerLinkActive="active">Historique</a>
+    </nav>
   </header>
 
-  <section class="status">
-    <p>
-      Mode :
-      <strong>{{ demo ? 'Démo (données mockées, aucune écriture réelle)' : 'Local (API réelle)' }}</strong>
-    </p>
-    <p>API : <code>{{ apiBaseUrl || '— (mode démo)' }}</code></p>
-  </section>
+  @if (demo) {
+    <div class="demo-banner">
+      Mode démo — données mockées, <strong>aucune écriture réelle</strong> sur un site Kajabi.
+      L'usage réel se fait en local (<code>dotnet run</code>).
+    </div>
+  }
 
-  <p class="hint">
-    Squelette opérationnel. Les 3 écrans (Tableau de bord, Corrections, Historique)
-    arrivent en Phase 4.
-  </p>
-
-  <router-outlet />
-</main>
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

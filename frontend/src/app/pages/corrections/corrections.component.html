@@ -1,0 +1,156 @@
+<section class="sg-card">
+  <h2>Nouvelle correction</h2>
+  <p class="sg-muted">
+    Décris en langage naturel ce qu'il faut corriger. L'agent localise le contenu concerné,
+    propose un plan avec un avant/après, puis attend ta validation avant toute écriture.
+  </p>
+
+  <div class="sg-field">
+    <label for="instruction">Instruction</label>
+    <textarea
+      id="instruction"
+      rows="3"
+      [ngModel]="instruction()"
+      (ngModelChange)="instruction.set($event)"
+      placeholder="Ex. Corrige acccompagnement partout"
+    ></textarea>
+  </div>
+
+  <div class="form-actions">
+    <button class="sg-btn sg-btn--primary" (click)="submit()" [disabled]="submitting() || !instruction().trim()">
+      {{ submitting() ? 'Analyse en cours…' : 'Proposer une correction' }}
+    </button>
+    @if (currentPlan()) {
+      <button class="sg-btn sg-btn--ghost" (click)="reset()">Nouvelle instruction</button>
+    }
+  </div>
+
+  @if (errorMsg()) {
+    <p class="sg-empty">{{ errorMsg() }}</p>
+  }
+</section>
+
+@if (findings().length > 0) {
+  <section class="sg-card">
+    <h2>Findings du dernier audit</h2>
+    <ul class="findings-list">
+      @for (finding of findings(); track finding.id) {
+        <li>
+          <div class="findings-list__text">
+            <strong>{{ finding.title }}</strong>
+            <span class="sg-muted"> — {{ finding.pageCount }} page(s)</span>
+          </div>
+          <button class="sg-btn sg-btn--ghost" (click)="prefillFromFinding(finding)">Corriger</button>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (currentPlan(); as plan) {
+  <section class="sg-card plan-card">
+    <h2>Plan proposé</h2>
+    <p class="sg-muted">« {{ plan.instruction }} »</p>
+
+    @switch (plan.status) {
+      @case (CorrectionPlanStatus.NeedsClarification) {
+        <div class="clarification">
+          <span class="sg-badge sg-badge--warning">Précision nécessaire</span>
+          <p>{{ plan.clarification }}</p>
+          <div class="sg-field">
+            <label for="clarification-answer">Ta réponse</label>
+            <textarea
+              id="clarification-answer"
+              rows="2"
+              [ngModel]="clarificationAnswer()"
+              (ngModelChange)="clarificationAnswer.set($event)"
+            ></textarea>
+          </div>
+          <button
+            class="sg-btn sg-btn--primary"
+            (click)="submitClarification()"
+            [disabled]="submitting() || !clarificationAnswer().trim()"
+          >
+            Envoyer la précision
+          </button>
+        </div>
+      }
+      @case (CorrectionPlanStatus.Failed) {
+        <span class="sg-badge sg-badge--danger">Échec</span>
+        <p class="sg-empty">{{ plan.error }}</p>
+      }
+      @default {
+        <span
+          class="sg-badge"
+          [class.sg-badge--success]="plan.status === CorrectionPlanStatus.Applied"
+          [class.sg-badge--warning]="plan.status === CorrectionPlanStatus.PartiallyApplied || plan.status === CorrectionPlanStatus.AwaitingReview"
+          [class.sg-badge--danger]="plan.status === CorrectionPlanStatus.Rejected"
+        >
+          @switch (plan.status) {
+            @case (CorrectionPlanStatus.AwaitingReview) { En attente de validation }
+            @case (CorrectionPlanStatus.Applied) { Appliqué }
+            @case (CorrectionPlanStatus.PartiallyApplied) { Partiellement appliqué }
+            @case (CorrectionPlanStatus.Rejected) { Refusé }
+          }
+        </span>
+
+        @if (plan.resume) {
+          <p>{{ plan.resume }}</p>
+        }
+
+        <ul class="action-list">
+          @for (action of plan.actions; track action.id) {
+            <li class="action" [class.action--blocked]="action.blocked">
+              <div class="action__header">
+                <strong>{{ action.target }}</strong>
+                <span class="sg-muted">({{ action.tool }})</span>
+                @if (action.blocked) {
+                  <span class="sg-badge sg-badge--danger">Bloqué — hors whitelist</span>
+                } @else if (action.applied) {
+                  <span class="sg-badge sg-badge--success">Appliqué</span>
+                }
+              </div>
+
+              @if (action.blocked) {
+                <p class="sg-empty">{{ action.blockedReason }}</p>
+              } @else {
+                <div class="diff">
+                  <div class="sg-diff-before">{{ action.before || '(vide)' }}</div>
+                  <div class="sg-diff-after">{{ action.after || '(vide)' }}</div>
+                </div>
+              }
+
+              @if (action.applied && action.postWriteVerified !== null) {
+                <p class="verification" [class.verification--ok]="action.postWriteVerified">
+                  {{ action.postWriteVerified ? '✓ Vérifié après écriture' : '⚠ Non vérifié après écriture' }}
+                  @if (action.verificationNote) {
+                    — {{ action.verificationNote }}
+                  }
+                </p>
+              }
+
+              @if (action.applyError) {
+                <p class="sg-empty">{{ action.applyError }}</p>
+              }
+            </li>
+          }
+        </ul>
+
+        @if (plan.status === CorrectionPlanStatus.AwaitingReview) {
+          <div class="form-actions">
+            <button
+              class="sg-btn sg-btn--success"
+              (click)="apply()"
+              [disabled]="deciding() || !hasApplicableActions(plan)"
+            >
+              {{ deciding() ? 'Application…' : 'Valider' }}
+            </button>
+            <button class="sg-btn sg-btn--danger" (click)="reject()" [disabled]="deciding()">
+              Refuser
+            </button>
+          </div>
+        }
+      }
+    }
+  </section>
+}

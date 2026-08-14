@@ -1,0 +1,127 @@
+<section class="sg-card">
+  <h2>Connexion Kajabi</h2>
+
+  @if (kajabiStatus(); as status) {
+    @if (status.connected) {
+      <p>
+        <span class="sg-badge" [class.sg-badge--success]="!status.needsReconnect" [class.sg-badge--danger]="status.needsReconnect">
+          {{ status.needsReconnect ? 'Reconnexion requise' : 'Connecté' }}
+        </span>
+      </p>
+      <dl class="kv">
+        <dt>Site</dt>
+        <dd>{{ status.siteId ?? '—' }}</dd>
+        <dt>Permissions</dt>
+        <dd>{{ status.scopes ?? '—' }}</dd>
+        <dt>Expire le</dt>
+        <dd>{{ status.expiresAt ? (status.expiresAt | date: 'medium') : '—' }}</dd>
+      </dl>
+      @if (status.needsReconnect && !isDemo) {
+        <a class="sg-btn sg-btn--primary" [href]="connectKajabiUrl()">Se reconnecter</a>
+      }
+    } @else {
+      <p class="sg-muted">Aucune connexion Kajabi active.</p>
+      @if (!isDemo) {
+        <a class="sg-btn sg-btn--primary" [href]="connectKajabiUrl()">Se connecter à Kajabi</a>
+      } @else {
+        <p class="sg-empty">Connexion réelle indisponible en mode démo.</p>
+      }
+    }
+  } @else if (loadError()) {
+    <p class="sg-empty">{{ loadError() }}</p>
+  } @else {
+    <p class="sg-muted">Chargement…</p>
+  }
+</section>
+
+<section class="sg-card">
+  <h2>Lancer un audit</h2>
+  <form class="launch-form" (ngSubmit)="launchAudit()">
+    <div class="sg-field">
+      <label for="target-url">URL du site à auditer</label>
+      <input
+        id="target-url"
+        type="url"
+        name="targetUrl"
+        [value]="targetUrl()"
+        (input)="targetUrl.set($any($event.target).value)"
+        required
+      />
+    </div>
+    <button class="sg-btn sg-btn--primary" type="submit" [disabled]="launching()">
+      {{ launching() ? 'Lancement…' : 'Lancer un audit' }}
+    </button>
+  </form>
+
+  @if (progressMessage(); as message) {
+    <p class="progress-message">⏳ {{ message }}</p>
+  }
+</section>
+
+<section class="sg-card">
+  <h2>Dernier audit</h2>
+
+  @if (auditJob(); as job) {
+    <p>
+      <span class="sg-badge sg-badge--info">{{ job.targetUrl }}</span>
+      @switch (job.status) {
+        @case (AuditStatus.Completed) {
+          <span class="sg-badge sg-badge--success">Terminé</span>
+        }
+        @case (AuditStatus.Failed) {
+          <span class="sg-badge sg-badge--danger">Échoué</span>
+        }
+        @case (AuditStatus.Running) {
+          <span class="sg-badge sg-badge--warning">En cours</span>
+        }
+        @default {
+          <span class="sg-badge sg-badge--info">En attente</span>
+        }
+      }
+    </p>
+
+    @if (job.status === AuditStatus.Completed) {
+      <div class="counters">
+        <div class="counter counter--urgent">
+          <span class="counter__value">{{ urgentCount() }}</span>
+          <span class="counter__label">Urgent</span>
+        </div>
+        <div class="counter counter--important">
+          <span class="counter__value">{{ importantCount() }}</span>
+          <span class="counter__label">Important</span>
+        </div>
+        <div class="counter">
+          <span class="counter__value">{{ totalFindings() }}</span>
+          <span class="counter__label">Findings au total</span>
+        </div>
+        <div class="counter">
+          <span class="counter__value">{{ job.pagesAudited }}</span>
+          <span class="counter__label">Pages auditées</span>
+        </div>
+      </div>
+
+      <p class="actions">
+        @if (pdfUrl(); as href) {
+          @if (isDemo) {
+            <span class="sg-btn sg-btn--ghost" title="Indisponible en mode démo" aria-disabled="true">
+              📄 Télécharger le rapport PDF
+            </span>
+          } @else {
+            <a class="sg-btn sg-btn--primary" [href]="href" target="_blank" rel="noopener">
+              📄 Télécharger le rapport PDF
+            </a>
+          }
+        }
+        <a class="sg-btn sg-btn--ghost" routerLink="/corrections">Voir les corrections possibles →</a>
+      </p>
+    } @else if (job.status === AuditStatus.Failed) {
+      <p class="sg-empty">{{ job.error }}</p>
+    }
+  } @else {
+    <p class="sg-muted">Aucun audit encore lancé.</p>
+  }
+
+  @if (loadError() && auditJob()) {
+    <p class="sg-empty">{{ loadError() }}</p>
+  }
+</section>

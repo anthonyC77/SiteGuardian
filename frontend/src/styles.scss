@@ -1,1 +1,197 @@
-/* You can add global styles to this file, and also import other style files */
+/* Styles globaux + design system minimal partagé par les 3 écrans (Phase 4). */
+
+:root {
+  --sg-bg: #f7f8fa;
+  --sg-surface: #ffffff;
+  --sg-border: #e2e5eb;
+  --sg-text: #1a1a1a;
+  --sg-text-muted: #6b7280;
+  --sg-primary: #2563eb;
+  --sg-primary-hover: #1d4ed8;
+  --sg-success: #15803d;
+  --sg-success-bg: #dcfce7;
+  --sg-danger: #b91c1c;
+  --sg-danger-bg: #fee2e2;
+  --sg-warning: #92400e;
+  --sg-warning-bg: #fef3c7;
+  --sg-info: #374151;
+  --sg-info-bg: #e5e7eb;
+  --sg-radius: 10px;
+  --sg-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--sg-bg);
+  color: var(--sg-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+a {
+  color: var(--sg-primary);
+}
+
+button {
+  font-family: inherit;
+}
+
+.sg-card {
+  background: var(--sg-surface);
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius);
+  box-shadow: var(--sg-shadow);
+  padding: 1.25rem 1.5rem;
+}
+
+.sg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.sg-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sg-btn--primary {
+  background: var(--sg-primary);
+  color: #fff;
+}
+
+.sg-btn--primary:hover:not(:disabled) {
+  background: var(--sg-primary-hover);
+}
+
+.sg-btn--success {
+  background: var(--sg-success);
+  color: #fff;
+}
+
+.sg-btn--success:hover:not(:disabled) {
+  background: #166534;
+}
+
+.sg-btn--danger {
+  background: #fff;
+  color: var(--sg-danger);
+  border-color: var(--sg-danger);
+}
+
+.sg-btn--danger:hover:not(:disabled) {
+  background: var(--sg-danger-bg);
+}
+
+.sg-btn--ghost {
+  background: transparent;
+  color: var(--sg-text);
+  border-color: var(--sg-border);
+}
+
+.sg-btn--ghost:hover:not(:disabled) {
+  background: var(--sg-info-bg);
+}
+
+.sg-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sg-badge--success {
+  background: var(--sg-success-bg);
+  color: var(--sg-success);
+}
+
+.sg-badge--danger {
+  background: var(--sg-danger-bg);
+  color: var(--sg-danger);
+}
+
+.sg-badge--warning {
+  background: var(--sg-warning-bg);
+  color: var(--sg-warning);
+}
+
+.sg-badge--info {
+  background: var(--sg-info-bg);
+  color: var(--sg-info);
+}
+
+.sg-diff-before {
+  background: var(--sg-danger-bg);
+  color: var(--sg-danger);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  text-decoration: line-through;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sg-diff-after {
+  background: var(--sg-success-bg);
+  color: var(--sg-success);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sg-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sg-text-muted);
+}
+
+.sg-field input[type='text'],
+.sg-field input[type='url'],
+.sg-field textarea {
+  border: 1px solid var(--sg-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--sg-text);
+  background: var(--sg-surface);
+}
+
+.sg-field input:focus,
+.sg-field textarea:focus {
+  outline: 2px solid var(--sg-primary);
+  outline-offset: 1px;
+}
+
+.sg-muted {
+  color: var(--sg-text-muted);
+}
+
+.sg-empty {
+  color: var(--sg-text-muted);
+  font-style: italic;
+}
