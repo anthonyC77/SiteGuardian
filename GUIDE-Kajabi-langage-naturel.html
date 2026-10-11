@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Guide pas-à-pas sans jargon pour brancher son site Kajabi à Claude Cowork ou Codex et le modifier en écrivant simplement ce que l’on veut.">
+<title>Kajabi en langage naturel</title>
+<style>
+  /* ---------- Tokens : palette claire complète sur :root ---------- */
+  :root {
+    --ground:      #F6F8F7;
+    --surface:     #FFFFFF;
+    --surface-2:   #EEF2F1;
+    --ink:         #141B1D;
+    --ink-soft:    #4E5C5F;
+    --ink-faint:   #77878A;
+    --rule:        #DBE2E1;
+    --rule-strong: #C3CECD;
+
+    --accent:      #0B5566;
+    --accent-ink:  #08404E;
+    --accent-soft: #DEEDF1;
+
+    --ok:          #2F6B45;
+    --ok-soft:     #E3F0E7;
+    --warn:        #8A5A06;
+    --warn-soft:   #FAEFDA;
+    --danger:      #8E2F24;
+    --danger-soft: #FAE8E4;
+
+    --shadow: 0 1px 2px rgba(20,27,29,.05), 0 8px 24px -16px rgba(20,27,29,.28);
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "Liberation Mono", monospace;
+  }
+
+  /* Thème système sombre — uniquement si l'utilisateur n'a pas forcé le clair */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0D1416;
+      --surface:     #141D20;
+      --surface-2:   #1B262A;
+      --ink:         #E5EDEC;
+      --ink-soft:    #A3B2B3;
+      --ink-faint:   #7E8F90;
+      --rule:        #263336;
+      --rule-strong: #35464A;
+
+      --accent:      #64C4D8;
+      --accent-ink:  #9BDDEB;
+      --accent-soft: #10333D;
+
+      --ok:          #79C79B;
+      --ok-soft:     #14301F;
+      --warn:        #E0AE5A;
+      --warn-soft:   #33260E;
+      --danger:      #EE9384;
+      --danger-soft: #3A1D18;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+    }
+  }
+
+  /* Choix explicite sombre — gagne dans tous les cas */
+  :root[data-theme="dark"] {
+    --ground:      #0D1416;
+    --surface:     #141D20;
+    --surface-2:   #1B262A;
+    --ink:         #E5EDEC;
+    --ink-soft:    #A3B2B3;
+    --ink-faint:   #7E8F90;
+    --rule:        #263336;
+    --rule-strong: #35464A;
+
+    --accent:      #64C4D8;
+    --accent-ink:  #9BDDEB;
+    --accent-soft: #10333D;
+
+    --ok:          #79C79B;
+    --ok-soft:     #14301F;
+    --warn:        #E0AE5A;
+    --warn-soft:   #33260E;
+    --danger:      #EE9384;
+    --danger-soft: #3A1D18;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+
+  /* ---------- Base ---------- */
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  p { margin: 0 0 1rem; max-width: 68ch; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.35rem; max-width: 68ch; }
+  li { margin-bottom: .45rem; }
+  li::marker { color: var(--ink-faint); }
+  strong { font-weight: 650; color: var(--ink); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  code, kbd, .mono {
+    font-family: var(--mono);
+    font-size: .875em;
+  }
+  code {
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: .1em .35em;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---------- En-tête ---------- */
+  .masthead {
+    padding: 4.5rem 0 2.5rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1.1rem;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2.15rem, 5.5vw, 3.4rem);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin: 0 0 1.1rem;
+    max-width: 20ch;
+  }
+  .standfirst {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin-bottom: 1.75rem;
+  }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+  }
+  .facts li {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: .38rem .8rem;
+  }
+
+  /* ---------- Grille + sommaire ---------- */
+  .layout { display: grid; gap: 3rem; grid-template-columns: 1fr; }
+
+  .toc { margin: 0 0 1rem; }
+  .toc h2 {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 .9rem;
+    font-weight: 500;
+    border: 0;
+    padding: 0;
+  }
+  .toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    counter-reset: toc;
+  }
+  .toc li { margin: 0; counter-increment: toc; }
+  .toc a {
+    display: flex;
+    gap: .6rem;
+    align-items: baseline;
+    padding: .3rem .5rem;
+    border-radius: 5px;
+    text-decoration: none;
+    color: var(--ink-soft);
+    font-size: .875rem;
+    line-height: 1.35;
+  }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+
+  @media (min-width: 940px) {
+    .layout { grid-template-columns: 208px minmax(0, 1fr); gap: 4rem; align-items: start; }
+    .toc { position: sticky; top: 2.5rem; }
+  }
+
+  /* ---------- Sections ---------- */
+  section { scroll-margin-top: 2rem; margin-bottom: 3.5rem; }
+  section > h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.45rem, 3vw, 1.95rem);
+    font-weight: 600;
+    letter-spacing: -.01em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0 0 .35rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--ink);
+  }
+  section > h2 .num {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .12em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: .55rem;
+    font-weight: 500;
+  }
+  .lede { color: var(--ink-soft); margin-bottom: 1.75rem; }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 1.05rem;
+    font-weight: 650;
+    letter-spacing: -.005em;
+    margin: 2rem 0 .6rem;
+  }
+
+  /* ---------- Analogie ---------- */
+  .analogy {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.75rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+  }
+  .analogy p:last-child { margin-bottom: 0; }
+  .analogy .big {
+    font-family: var(--serif);
+    font-size: clamp(1.2rem, 2.6vw, 1.5rem);
+    line-height: 1.35;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  /* ---------- Colonnes ---------- */
+  .cols {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 700px) { .cols { grid-template-columns: 1fr 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.4rem 1.5rem;
+  }
+  .card h3 { margin-top: 0; }
+  .card ul { margin-bottom: 0; padding-left: 1.15rem; }
+  .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+
+  .card.yes { border-color: color-mix(in srgb, var(--ok) 32%, var(--rule)); }
+  .card.no  { border-color: color-mix(in srgb, var(--danger) 28%, var(--rule)); }
+  .card-tag {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: .5rem;
+  }
+  .card.yes .card-tag { color: var(--ok); }
+  .card.no  .card-tag { color: var(--danger); }
+
+  /* ---------- Étapes ---------- */
+  .steps { list-style: none; padding: 0; margin: 1.5rem 0 0; max-width: none; counter-reset: step; }
+  .steps > li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 2.15rem minmax(0, 1fr);
+    gap: 1rem;
+    padding-bottom: 1.6rem;
+    margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .steps > li:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+  .steps > li::before {
+    content: counter(step);
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border-radius: 50%;
+    width: 2.15rem;
+    height: 2.15rem;
+    display: grid;
+    place-items: center;
+    margin-top: .1rem;
+  }
+  .steps h3 { margin: .1rem 0 .5rem; }
+  .steps > li > div > :last-child { margin-bottom: 0; }
+
+  /* ---------- Chemins de menu / commandes ---------- */
+  .path, pre {
+    font-family: var(--mono);
+    font-size: .84rem;
+    line-height: 1.6;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: .8rem 1rem;
+    margin: .75rem 0 1rem;
+    overflow-x: auto;
+    max-width: 68ch;
+  }
+  pre { white-space: pre; }
+  .path { display: block; }
+  .path b { color: var(--accent-ink); font-weight: 600; }
+  .path .sep { color: var(--ink-faint); padding: 0 .35rem; }
+
+  /* ---------- Encadrés ---------- */
+  .note {
+    border-radius: 8px;
+    padding: 1rem 1.15rem;
+    margin: 1.25rem 0;
+    max-width: 68ch;
+    border: 1px solid;
+    font-size: .97rem;
+  }
+  .note p:last-child { margin-bottom: 0; }
+  .note .label {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: .4rem;
+    font-weight: 600;
+  }
+  .note.info   { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .note.info   .label { color: var(--accent-ink); }
+  .note.warn   { background: var(--warn-soft);   border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+  .note.warn   .label { color: var(--warn); }
+  .note.danger { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+  .note.danger .label { color: var(--danger); }
+
+  /* ---------- Tableaux ---------- */
+  .table-scroll { overflow-x: auto; margin: 1.25rem 0 1.5rem; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .93rem; }
+  th, td { text-align: left; padding: .8rem 1rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td strong { display: block; }
+
+  .chip {
+    display: inline-block;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: .25rem .55rem;
+    border-radius: 999px;
+    border: 1px solid;
+    font-weight: 600;
+  }
+  .chip.ok     { color: var(--ok);     background: var(--ok-soft);     border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+  .chip.maybe  { color: var(--warn);   background: var(--warn-soft);   border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+  .chip.no     { color: var(--danger); background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+
+  /* ---------- Comparatif des outils ---------- */
+  .tools { display: grid; gap: 1rem; grid-template-columns: 1fr; margin: 1.5rem 0; }
+  @media (min-width: 760px) { .tools { grid-template-columns: 1fr 1fr; } }
+  .tool {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+  }
+  .tool.pick { border-color: var(--accent); box-shadow: var(--shadow); }
+  .tool .letter {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .tool h3 { margin: 0 0 .35rem; font-size: 1.15rem; }
+  .tool dl { margin: .75rem 0 0; display: grid; grid-template-columns: auto 1fr; gap: .4rem .9rem; font-size: .9rem; }
+  .tool dt { color: var(--ink-faint); font-family: var(--mono); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; padding-top: .18rem; }
+  .tool dd { margin: 0; }
+
+  /* ---------- Exemples de phrases ---------- */
+  .prompts { list-style: none; padding: 0; margin: 1.25rem 0; display: flex; flex-direction: column; gap: .75rem; max-width: 68ch; }
+  .prompts li {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: .85rem 1.1rem;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .prompts li span {
+    display: block;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: .35rem;
+  }
+
+  /* ---------- Glossaire ---------- */
+  .glossary { margin: 1.25rem 0 0; max-width: 68ch; }
+  .glossary details {
+    border-bottom: 1px solid var(--rule);
+    padding: .2rem 0;
+  }
+  .glossary summary {
+    cursor: pointer;
+    padding: .7rem .25rem;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .glossary summary::-webkit-details-marker { display: none; }
+  .glossary summary::after {
+    content: "+";
+    font-family: var(--mono);
+    color: var(--accent);
+    font-weight: 400;
+    font-size: 1.1rem;
+  }
+  .glossary details[open] summary::after { content: "\2212"; }
+  .glossary details p { padding: 0 .25rem .8rem; margin: 0; color: var(--ink-soft); font-size: .96rem; }
+
+  /* ---------- Pied ---------- */
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 2rem;
+    margin-top: 4rem;
+    color: var(--ink-faint);
+    font-size: .875rem;
+  }
+  footer ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; }
+  footer li { margin: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Guide pour grand débutant</p>
+    <h1>Piloter votre site Kajabi en langage naturel</h1>
+    <p class="standfirst">
+      Kajabi peut désormais être branché à un assistant IA. Une fois la connexion faite,
+      vous écrivez ce que vous voulez changer — en français, en une phrase — et l'assistant
+      va le faire dans votre site. Voici comment mettre ça en place, sans une seule ligne de code.
+    </p>
+    <ul class="facts">
+      <li>≈ 15 minutes</li>
+      <li>Aucune compétence technique</li>
+      <li>Inclus dans votre offre Kajabi</li>
+      <li>Réversible à tout moment</li>
+    </ul>
+  </header>
+
+  <div class="layout">
+
+    <nav class="toc" aria-label="Sommaire">
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#idee">L'idée en une image</a></li>
+        <li><a href="#capacites">Ce que ça sait faire</a></li>
+        <li><a href="#avant">Avant de commencer</a></li>
+        <li><a href="#outil">Choisir votre outil</a></li>
+        <li><a href="#cowork">Parcours A — Cowork</a></li>
+        <li><a href="#codex">Parcours B — Codex</a></li>
+        <li><a href="#permissions">L'écran des permissions</a></li>
+        <li><a href="#premier-essai">Votre premier essai</a></li>
+        <li><a href="#formuler">Bien formuler vos demandes</a></li>
+        <li><a href="#securite">Les règles de prudence</a></li>
+        <li><a href="#depannage">Quand ça ne marche pas</a></li>
+        <li><a href="#glossaire">Petit glossaire</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <section id="idee">
+        <h2><span class="num">01</span>L'idée en une image</h2>
+
+        <div class="analogy">
+          <p class="big">
+            Imaginez que vous confiez un double de vos clés à un assistant très compétent,
+            avec un mot qui précise exactement les pièces où il a le droit d'entrer.
+          </p>
+          <p>
+            C'est très exactement ce que vous allez faire. Kajabi propose une « porte de service »
+            officielle pour les assistants IA. Vous décidez quelles pièces ouvrir (les articles ?
+            les pages ? les e-mails ?), l'assistant y travaille pour vous, et il vous rend
+            son travail <strong>en brouillon</strong> — c'est toujours vous qui appuyez sur
+            « Publier » depuis Kajabi.
+          </p>
+        </div>
+
+        <p>
+          Le nom technique de cette porte de service est <strong>MCP</strong>. Vous n'avez pas
+          besoin de comprendre ce que ça veut dire, mais vous allez voir ces trois lettres
+          partout, alors autant les reconnaître. La seule chose à retenir : c'est une adresse
+          à copier-coller, une fois, dans votre assistant.
+        </p>
+
+        <div class="note info">
+          <span class="label">L'adresse en question</span>
+          <p>
+            <code>https://mcp.kajabi.com/mcp</code> — gardez-la sous la main, vous en aurez
+            besoin une seule fois, à l'étape 5 ou 6 selon l'outil que vous choisissez.
+          </p>
+        </div>
+      </section>
+
+      <section id="capacites">
+        <h2><span class="num">02</span>Ce que ça sait faire — et ce qu'il ne faut pas espérer</h2>
+        <p class="lede">
+          Regardez cette liste avant d'aller plus loin : si ce que vous vouliez automatiser
+          est dans la colonne de droite, ce guide ne vous servira pas.
+        </p>
+
+        <div class="cols">
+          <div class="card yes">
+            <span class="card-tag">L'assistant peut</span>
+            <ul>
+              <li>Lire et modifier vos <strong>pages</strong> et vos <strong>landing pages</strong></li>
+              <li>Écrire et corriger vos <strong>articles de blog</strong></li>
+              <li>Préparer vos <strong>e-mails</strong>, séquences et newsletters</li>
+              <li>Créer et ajuster vos <strong>offres, produits et cours</strong></li>
+              <li>Travailler sur vos <strong>contacts, étiquettes et segments</strong></li>
+              <li>Consulter vos <strong>commandes</strong></li>
+              <li>Retoucher les <strong>réglages du site</strong> et le contenu du thème</li>
+            </ul>
+          </div>
+          <div class="card no">
+            <span class="card-tag">L'assistant ne peut pas</span>
+            <ul>
+              <li>Vous sortir des <strong>statistiques</strong> ou des analyses d'audience</li>
+              <li>Gérer votre <strong>communauté</strong> au-delà du strict minimum</li>
+              <li>Toucher aux <strong>paiements</strong>, remboursements ou facturation</li>
+              <li>Agir <strong>à la place d'un de vos clients</strong></li>
+              <li>Publier tout seul ce que vous ne lui avez pas demandé</li>
+            </ul>
+          </div>
+        </div>
+
+        <p>
+          Un exemple de ce que vous pourrez taper une fois branché, pour fixer les idées :
+          « <em>Crée une offre à −30 % sur mon cours Photographie, valable mardi prochain,
+          rédige l'e-mail d'annonce et mets à jour la landing page pour mentionner la remise.</em> »
+          Trois actions, une phrase.
+        </p>
+      </section>
+
+      <section id="avant">
+        <h2><span class="num">03</span>Avant de commencer</h2>
+        <p class="lede">Quatre choses à vérifier. Comptez deux minutes.</p>
+
+        <ol class="steps">
+          <li>
+            <div>
+              <h3>Un compte Kajabi, avec les droits d'administration</h3>
+              <p>
+                Peu importe l'offre — Basic, Growth ou Pro, mensuelle ou annuelle : la
+                connexion IA est incluse partout, sans supplément. En revanche, il faut être
+                administrateur du site, pas simple collaborateur.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Être connecté au bon compte Kajabi dans votre navigateur</h3>
+              <p>
+                C'est la cause n°1 des échecs. Si vous gérez plusieurs comptes Kajabi, ouvrez
+                votre navigateur, connectez-vous au bon, et laissez cet onglet ouvert. L'écran
+                d'autorisation s'ouvrira dans ce navigateur-là.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Un assistant IA installé</h3>
+              <p>
+                Claude Cowork ou Codex — le choix se fait à l'étape suivante. Installez-le et
+                connectez-vous à votre compte avant de continuer.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Une idée précise de votre première demande</h3>
+              <p>
+                Pas un grand chantier. Quelque chose de minuscule et vérifiable : corriger une
+                faute que vous connaissez, changer une date dans un bandeau. Vous testez la
+                tuyauterie, pas l'assistant.
+              </p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="note info">
+          <span class="label">Bon à savoir</span>
+          <p>
+            Vous n'aurez <strong>jamais</strong> à donner votre mot de passe Kajabi à l'assistant.
+            L'autorisation passe par une page officielle Kajabi, dans votre navigateur, où vous
+            cochez vous-même les cases. Si un outil vous réclame votre mot de passe, arrêtez-vous.
+          </p>
+        </div>
+      </section>
+
+      <section id="outil">
+        <h2><span class="num">04</span>Choisir votre outil</h2>
+        <p class="lede">
+          Les deux fonctionnent avec Kajabi. Ils ne visent simplement pas le même public.
+        </p>
+
+        <div class="tools">
+          <div class="tool pick">
+            <span class="letter">Parcours A · recommandé</span>
+            <h3>Claude Cowork</h3>
+            <p>
+              L'assistant « collègue de bureau » d'Anthropic. Tout se fait à la souris, dans
+              des menus, sans jamais ouvrir de terminal. C'est celui qui a été pensé pour les
+              gens qui ne codent pas.
+            </p>
+            <dl>
+              <dt>Pour qui</dt><dd>Vous gérez votre site seul et vous n'avez jamais écrit de code.</dd>
+              <dt>Mise en place</dt><dd>5 clics dans les réglages.</dd>
+              <dt>Abonnement</dt><dd>Un plan payant (Pro ou supérieur) est conseillé ; le plan gratuit n'autorise qu'une seule connexion de ce type.</dd>
+            </dl>
+          </div>
+
+          <div class="tool">
+            <span class="letter">Parcours B</span>
+            <h3>Codex</h3>
+            <p>
+              L'assistant d'OpenAI. Il existe en application et en ligne de commande. La
+              version application se configure aussi à la souris ; la version ligne de commande
+              demande d'éditer un petit fichier de réglages.
+            </p>
+            <dl>
+              <dt>Pour qui</dt><dd>Vous l'utilisez déjà, ou quelqu'un vous a installé la version en ligne de commande.</dd>
+              <dt>Mise en place</dt><dd>Quelques clics, ou 3 lignes à coller dans un fichier.</dd>
+              <dt>Abonnement</dt><dd>Compte ChatGPT ; les droits d'écriture demandent selon les cas un plan professionnel.</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="note info">
+          <span class="label">Si vous hésitez</span>
+          <p>
+            Prenez le parcours A. Vous pourrez toujours ajouter le second plus tard : brancher
+            Kajabi à un deuxième assistant ne casse pas le premier, et les deux peuvent
+            cohabiter sans problème.
+          </p>
+        </div>
+      </section>
+
+      <section id="cowork">
+        <h2><span class="num">05</span>Parcours A — brancher Kajabi à Claude Cowork</h2>
+        <p class="lede">
+          Cinq étapes. Les libellés ci-dessous sont ceux de l'interface en anglais, qui reste
+          la version par défaut ; la traduction est indiquée entre parenthèses.
+        </p>
+
+        <ol class="steps">
+          <li>
+            <div>
+              <h3>Ouvrez les réglages des connecteurs</h3>
+              <p>Dans Cowork (ou Claude sur le web, ou l'application de bureau — c'est le même réglage) :</p>
+              <span class="path"><b>Customize</b><span class="sep">›</span><b>Connectors</b> <span class="sep">—</span> Personnaliser › Connecteurs</span>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Ajoutez un connecteur personnalisé</h3>
+              <p>
+                Cliquez sur le bouton <strong>+</strong> à côté de « Connectors », puis sur
+                <strong>Add custom connector</strong> (Ajouter un connecteur personnalisé).
+                Sur certaines versions, ce bouton se trouve tout en bas de la page.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Remplissez les deux champs</h3>
+              <p>Un nom, une adresse. Rien d'autre — laissez les « Advanced settings » (réglages avancés) tels quels.</p>
+              <span class="path">Name (nom) <span class="sep">→</span> <b>Kajabi</b><br>URL <span class="sep">→</span> <b>https://mcp.kajabi.com/mcp</b></span>
+              <p>Puis cliquez sur <strong>Add</strong> (Ajouter).</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Autorisez, et cochez vos permissions</h3>
+              <p>
+                Une page Kajabi s'ouvre dans votre navigateur : c'est le moment important du
+                guide. Ne validez pas machinalement —
+                <a href="#permissions">la section 07 explique quoi cocher</a>. Une fois vos
+                choix faits, approuvez.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Activez Kajabi dans la conversation</h3>
+              <p>
+                Le connecteur existe, mais il n'est pas encore allumé dans vos discussions.
+                Ouvrez une nouvelle conversation, cliquez sur le bouton <strong>+</strong> en
+                bas à gauche, puis sur <strong>Connectors</strong>, et basculez l'interrupteur
+                Kajabi sur « activé ».
+              </p>
+              <div class="note info">
+                <span class="label">Détail qui compte</span>
+                <p>Cet interrupteur se règle par conversation. Si demain Kajabi semble avoir disparu, c'est presque toujours qu'il est simplement éteint dans la nouvelle discussion.</p>
+              </div>
+            </div>
+          </li>
+        </ol>
+
+        <p>Passez directement à <a href="#permissions">la section 07</a>.</p>
+      </section>
+
+      <section id="codex">
+        <h2><span class="num">06</span>Parcours B — brancher Kajabi à Codex</h2>
+        <p class="lede">
+          Deux chemins selon la version que vous utilisez. Prenez le premier si vous avez une
+          fenêtre avec des boutons, le second si vous avez une fenêtre noire où l'on tape du texte.
+        </p>
+
+        <h3>B1 · Vous utilisez l'application Codex ou l'extension dans un éditeur</h3>
+        <ol class="steps">
+          <li>
+            <div>
+              <h3>Ouvrez la gestion des serveurs MCP</h3>
+              <p>Dans les réglages de l'application, cherchez la section MCP, puis <strong>Add server</strong> (Ajouter un serveur).</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Choisissez le bon type</h3>
+              <p>
+                Une liste vous demande le type de connexion. Choisissez
+                <strong>Streamable HTTP</strong> — c'est le type « serveur distant », par
+                opposition aux programmes installés sur votre machine.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Collez l'adresse et enregistrez</h3>
+              <span class="path">Nom <span class="sep">→</span> <b>kajabi</b><br>URL <span class="sep">→</span> <b>https://mcp.kajabi.com/mcp</b></span>
+              <p>
+                L'écran d'autorisation Kajabi s'ouvre ensuite dans votre navigateur.
+                <a href="#permissions">Voir la section 07</a> pour les permissions.
+              </p>
+            </div>
+          </li>
+        </ol>
+
+        <h3>B2 · Vous utilisez Codex en ligne de commande</h3>
+        <p>
+          Il faut ajouter trois lignes dans un fichier de réglages nommé
+          <code>config.toml</code>. Il se trouve dans un dossier caché <code>.codex</code>,
+          à la racine de votre dossier personnel. S'il n'existe pas, créez-le.
+        </p>
+        <pre>[mcp_servers.kajabi]
+url = "https://mcp.kajabi.com/mcp"
+auth = "oauth"</pre>
+        <p>Enregistrez, puis lancez la connexion et vérifiez :</p>
+        <pre>codex mcp login kajabi
+codex mcp list</pre>
+        <p>
+          La première commande ouvre l'autorisation Kajabi dans votre navigateur ; la seconde
+          doit faire apparaître <code>kajabi</code> dans la liste. Enchaînez sur
+          <a href="#permissions">la section 07</a>.
+        </p>
+
+        <div class="note warn">
+          <span class="label">Attention aux guillemets</span>
+          <p>
+            Si vous copiez ces lignes depuis un traitement de texte, les guillemets droits
+            <code>"</code> peuvent être transformés en guillemets courbes « intelligents », et
+            le fichier ne fonctionnera plus. Collez-les dans un éditeur de texte simple
+            (Bloc-notes, TextEdit en mode texte brut).
+          </p>
+        </div>
+      </section>
+
+      <section id="permissions">
+        <h2><span class="num">07</span>L'écran des permissions</h2>
+        <p class="lede">
+          C'est le seul écran de tout ce guide où une mauvaise case cochée peut vous coûter
+          cher. Il liste ce que l'assistant aura le droit de faire, chaque ligne s'activant
+          indépendamment. Le principe est simple : <strong>n'accordez que ce dont vous avez
+          besoin cette semaine.</strong> Vous pourrez toujours revenir en ajouter.
+        </p>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Permission proposée</th>
+                <th scope="col">Concrètement</th>
+                <th scope="col">Notre conseil</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Lire vos données Kajabi</strong></td>
+                <td>L'assistant peut voir vos pages, contacts, commandes. Sans ça, il ne peut rien faire du tout.</td>
+                <td><span class="chip ok">Cochez</span></td>
+              </tr>
+              <tr>
+                <td><strong>Créer et modifier articles, landing pages, newsletters, formulaires et cours</strong></td>
+                <td>Le cœur du sujet : corriger un texte, réécrire une page, préparer un article.</td>
+                <td><span class="chip ok">Cochez</span></td>
+              </tr>
+              <tr>
+                <td><strong>Créer et modifier offres, produits, coaching et événements</strong></td>
+                <td>Monter une promotion, changer un prix, créer un nouveau produit.</td>
+                <td><span class="chip maybe">Selon besoin</span></td>
+              </tr>
+              <tr>
+                <td><strong>Créer et modifier étiquettes et segments de contacts</strong></td>
+                <td>Réorganiser votre base de contacts en groupes.</td>
+                <td><span class="chip maybe">Selon besoin</span></td>
+              </tr>
+              <tr>
+                <td><strong>Créer et modifier diffusions, séquences et newsletters</strong></td>
+                <td>Préparer vos campagnes e-mail.</td>
+                <td><span class="chip maybe">Selon besoin</span></td>
+              </tr>
+              <tr>
+                <td><strong>Envoyer des messages privés et publier dans la communauté</strong></td>
+                <td>Écrire à vos membres en votre nom. Ces publications-là partent en direct, pas en brouillon.</td>
+                <td><span class="chip no">Laissez décoché</span></td>
+              </tr>
+              <tr>
+                <td><strong>Publier ou dépublier du contenu</strong></td>
+                <td>Rend le garde-fou du brouillon inopérant : l'assistant peut mettre en ligne lui-même.</td>
+                <td><span class="chip no">Laissez décoché</span></td>
+              </tr>
+              <tr>
+                <td><strong>Modifier le contenu du thème, le JavaScript et le CSS</strong></td>
+                <td>Touche à l'apparence de tout le site. Une erreur ici est difficile à rattraper seul.</td>
+                <td><span class="chip no">Laissez décoché</span></td>
+              </tr>
+              <tr>
+                <td><strong>Lister et ajouter des utilisateurs du compte</strong></td>
+                <td>Donner à quelqu'un d'autre l'accès à votre Kajabi. Désactivé par défaut, et c'est très bien ainsi.</td>
+                <td><span class="chip no">Laissez décoché</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note warn">
+          <span class="label">Les trois dernières lignes</span>
+          <p>
+            « Publier », « thème et code », « utilisateurs » sont les trois permissions dont les
+            effets sont les plus difficiles à annuler. Kajabi les signale d'ailleurs comme
+            telles. Vivez un mois sans, puis rouvrez la question — vous saurez alors si vous en
+            avez réellement besoin.
+          </p>
+        </div>
+
+        <p>
+          Une fois vos cases cochées, validez. C'est fini : la connexion est établie et
+          l'assistant sait parler à votre site.
+        </p>
+      </section>
+
+      <section id="premier-essai">
+        <h2><span class="num">08</span>Votre premier essai</h2>
+        <p class="lede">
+          Toujours la même première phrase, quel que soit l'outil. Elle sert à vérifier que le
+          tuyau est ouvert — et l'assistant en a besoin pour savoir de quel site vous parlez.
+        </p>
+
+        <ul class="prompts">
+          <li><span>Étape 1 · vérification</span>Liste mes sites Kajabi.</li>
+        </ul>
+
+        <p>
+          Si l'assistant vous répond avec le nom de votre site, tout est en place. Enchaînez
+          alors sur une lecture, sans rien modifier :
+        </p>
+
+        <ul class="prompts">
+          <li><span>Étape 2 · lecture seule</span>Montre-moi le texte du bandeau en haut de ma page d'accueil.</li>
+          <li><span>Étape 3 · première modification</span>Dans le pied de page, remplace « Tous droits réservés 2025 » par « Tous droits réservés 2026 ». Montre-moi d'abord ce que tu vas changer, avant de le faire.</li>
+        </ul>
+
+        <p>
+          Puis, sans exception : allez dans votre interface Kajabi et regardez le brouillon de
+          vos propres yeux. C'est le réflexe à installer dès le premier jour.
+        </p>
+
+        <div class="note info">
+          <span class="label">Pourquoi « liste mes sites » en premier</span>
+          <p>
+            Presque tous les outils Kajabi ont besoin de savoir sur quel site travailler.
+            Tant que l'assistant n'a pas posé cette question, il risque de tourner en rond ou de
+            vous demander un identifiant que vous n'avez pas. Cette phrase lui donne la réponse
+            une fois pour toutes.
+          </p>
+        </div>
+      </section>
+
+      <section id="formuler">
+        <h2><span class="num">09</span>Bien formuler vos demandes</h2>
+        <p class="lede">
+          Il n'y a pas de syntaxe à apprendre. Mais une demande vague donne un résultat vague.
+          Une bonne demande tient en quatre morceaux.
+        </p>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Le morceau</th>
+                <th scope="col">La question à laquelle il répond</th>
+                <th scope="col">Exemple</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>L'endroit</strong></td>
+                <td>Où, précisément ?</td>
+                <td>« sur la landing page du cours Photographie »</td>
+              </tr>
+              <tr>
+                <td><strong>L'action</strong></td>
+                <td>Quoi faire ?</td>
+                <td>« réécris le paragraphe d'introduction »</td>
+              </tr>
+              <tr>
+                <td><strong>La contrainte</strong></td>
+                <td>Dans quelles limites ?</td>
+                <td>« en gardant le même titre, maximum 3 phrases, tutoiement »</td>
+              </tr>
+              <tr>
+                <td><strong>Le garde-fou</strong></td>
+                <td>Que dois-je voir avant que ça parte ?</td>
+                <td>« montre-moi la version avant / après avant d'enregistrer »</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Six demandes prêtes à l'emploi</h3>
+        <p>Adaptez les noms, gardez la structure.</p>
+
+        <ul class="prompts">
+          <li><span>Corriger</span>Relis les cinq derniers articles de mon blog et liste-moi les fautes d'orthographe et de grammaire que tu trouves, avec la phrase concernée. Ne corrige rien pour l'instant.</li>
+          <li><span>Uniformiser</span>Sur tout le site, je parle tantôt d'« accompagnement », tantôt de « coaching ». Trouve tous les endroits où apparaît « coaching » et remplace-les par « accompagnement ». Montre-moi la liste avant d'agir.</li>
+          <li><span>Rédiger</span>Écris un article de blog de 800 mots sur les trois erreurs de débutant en photo de portrait, dans le même ton que mes articles existants. Mets-le en brouillon, je le relirai.</li>
+          <li><span>Référencer</span>Vérifie que chacune de mes landing pages a une méta-description. Pour celles qui n'en ont pas, propose-m'en une de 150 caractères maximum et attends ma validation.</li>
+          <li><span>Vendre</span>Prépare une offre à −25 % sur mon cours Photographie, valable du 1er au 8 septembre, et rédige l'e-mail d'annonce en brouillon. Ne publie rien.</li>
+          <li><span>Ranger</span>Liste mes étiquettes de contacts et dis-moi lesquelles font doublon ou ne sont plus utilisées. Propose-moi un ménage, je choisirai.</li>
+        </ul>
+
+        <div class="note info">
+          <span class="label">Le réflexe qui change tout</span>
+          <p>
+            Terminez vos demandes par « <strong>montre-moi d'abord</strong> » ou
+            « <strong>ne publie rien</strong> ». Ça ne coûte rien, ça vous laisse la main, et
+            ça évite l'immense majorité des mauvaises surprises.
+          </p>
+        </div>
+      </section>
+
+      <section id="securite">
+        <h2><span class="num">10</span>Les règles de prudence</h2>
+        <p class="lede">Cinq habitudes qui suffisent à travailler sereinement.</p>
+
+        <ol class="steps">
+          <li>
+            <div>
+              <h3>Ne comptez pas sur le brouillon les yeux fermés</h3>
+              <p>
+                La règle générale est bien que les modifications arrivent en brouillon, à
+                valider par vous dans Kajabi. Mais quand un type de contenu n'a pas de brouillon
+                dans Kajabi — c'est le cas des <strong>publications communautaires</strong> et
+                des <strong>formulaires</strong> — la modification part directement en ligne.
+                D'où le conseil de laisser la permission « communauté » décochée.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Vérifiez dans Kajabi, pas dans la conversation</h3>
+              <p>
+                L'assistant vous dit ce qu'il a fait. Ce n'est pas une preuve. Ouvrez Kajabi,
+                regardez la page concernée. Les deux premières semaines, faites-le à chaque fois.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Une demande à la fois, au début</h3>
+              <p>
+                Une phrase peut déclencher dix modifications. Tant que vous n'avez pas confiance,
+                demandez une chose, vérifiez, puis passez à la suivante. Vous saurez ainsi
+                toujours quoi défaire.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Ne collez jamais de données sensibles dans la conversation</h3>
+              <p>
+                Coordonnées bancaires, mots de passe, listes de clients exportées : rien de tout
+                cela n'a besoin d'être copié dans le chat. L'assistant accède déjà à ce dont il
+                a besoin, directement et de façon encadrée.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Sachez couper l'accès</h3>
+              <p>
+                À tout moment, dans Claude ou Cowork : <span class="mono">Customize › Connectors</span>,
+                puis <strong>Remove</strong> (ou le menu « … » à côté du connecteur). Côté
+                Codex, retirez le bloc <code>[mcp_servers.kajabi]</code> de votre fichier de
+                réglages. Et côté Kajabi, vous pouvez révoquer l'autorisation depuis les
+                réglages de votre compte, dans la section des applications connectées. La
+                coupure est immédiate.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section id="depannage">
+        <h2><span class="num">11</span>Quand ça ne marche pas</h2>
+        <p class="lede">Les cinq blocages courants, et leur solution.</p>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Ce que vous constatez</th>
+                <th scope="col">Ce qui se passe</th>
+                <th scope="col">Ce qu'il faut faire</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>L'assistant dit qu'il n'a aucun outil Kajabi</strong></td>
+                <td>Le connecteur est éteint dans cette conversation, ou pas activé sur le compte.</td>
+                <td>Bouton « + » en bas à gauche › Connectors › activez Kajabi. Puis vérifiez que la connexion apparaît bien dans vos réglages.</td>
+              </tr>
+              <tr>
+                <td><strong>L'écran d'autorisation Kajabi refuse de s'afficher</strong></td>
+                <td>Votre navigateur n'est pas connecté au bon compte Kajabi.</td>
+                <td>Ouvrez Kajabi dans votre navigateur, connectez-vous au bon compte, laissez l'onglet ouvert, recommencez.</td>
+              </tr>
+              <tr>
+                <td><strong>On vous redemande sans arrêt de vous reconnecter</strong></td>
+                <td>Plusieurs comptes se marchent dessus, ou l'autorisation a expiré.</td>
+                <td>Connectez-vous au bon compte, fermez complètement l'assistant, rouvrez-le et réessayez.</td>
+              </tr>
+              <tr>
+                <td><strong>Message « connecteurs personnalisés indisponibles »</strong></td>
+                <td>Réservé à Codex / ChatGPT : le mode développeur n'est pas activé.</td>
+                <td>Réglages › Connectors › Advanced, activez « Developer mode » et acceptez l'avertissement. En entreprise, un administrateur doit d'abord l'autoriser.</td>
+              </tr>
+              <tr>
+                <td><strong>L'assistant réclame un « site id »</strong></td>
+                <td>Il ne sait pas encore sur quel site travailler.</td>
+                <td>Écrivez simplement « Liste mes sites Kajabi », puis reformulez votre demande.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note danger">
+          <span class="label">Si une modification vous a échappé</span>
+          <p>
+            Ne demandez pas à l'assistant de « tout remettre comme avant » : il n'a pas
+            forcément gardé l'état d'origine. Coupez d'abord l'accès (règle 5 ci-dessus),
+            puis rétablissez le contenu depuis Kajabi, en vous appuyant sur son historique de
+            versions quand le type de contenu en propose un. Reconnectez ensuite, avec moins
+            de permissions.
+          </p>
+        </div>
+      </section>
+
+      <section id="glossaire">
+        <h2><span class="num">12</span>Petit glossaire</h2>
+        <p class="lede">Les six mots que vous croiserez, expliqués une fois pour toutes.</p>
+
+        <div class="glossary">
+          <details>
+            <summary>MCP</summary>
+            <p>La « porte de service » standardisée par laquelle un assistant IA parle à un logiciel comme Kajabi. Pour vous, c'est juste une adresse à coller une fois.</p>
+          </details>
+          <details>
+            <summary>Connecteur</summary>
+            <p>Le nom que Claude et Cowork donnent à une de ces portes une fois installée. « Ajouter un connecteur Kajabi » = « brancher Kajabi ».</p>
+          </details>
+          <details>
+            <summary>Serveur distant / Streamable HTTP</summary>
+            <p>Signifie simplement que le service tourne chez Kajabi, sur internet, et pas sur votre ordinateur. C'est le type à choisir quand un menu vous le demande.</p>
+          </details>
+          <details>
+            <summary>OAuth</summary>
+            <p>Le mécanisme d'autorisation qui vous évite de donner votre mot de passe. Le même que lorsque vous vous connectez à un site « avec Google ». C'est lui qui affiche l'écran des permissions.</p>
+          </details>
+          <details>
+            <summary>Permission (ou scope)</summary>
+            <p>Une case à cocher qui ouvre une pièce précise de votre site. Neuf sont proposées, elles s'activent séparément, et vous pouvez en retirer plus tard.</p>
+          </details>
+          <details>
+            <summary>Outil (tool)</summary>
+            <p>Une action unitaire que l'assistant sait déclencher — « lister les sites », « modifier un article ». Vous n'avez pas à les connaître : vous décrivez le résultat voulu, l'assistant choisit les outils.</p>
+          </details>
+        </div>
+      </section>
+
+      <footer>
+        <p>
+          Guide rédigé le 18 août 2026 à partir de la documentation officielle Kajabi, Anthropic
+          et OpenAI. Les libellés d'interface peuvent évoluer ; la logique décrite ici, elle,
+          reste valable.
+        </p>
+        <ul>
+          <li><a href="https://help.kajabi.com/articles/api-integrations/connect-kajabi-to-claude-or-chatgpt">Kajabi — Connect Kajabi to Claude or ChatGPT</a></li>
+          <li><a href="https://www.kajabi.com/product/mcp">Kajabi — Kajabi MCP</a></li>
+          <li><a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp">Anthropic — Custom connectors using remote MCP</a></li>
+          <li><a href="https://learn.chatgpt.com/docs/extend/mcp">OpenAI — Codex &amp; MCP</a></li>
+        </ul>
+      </footer>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>
